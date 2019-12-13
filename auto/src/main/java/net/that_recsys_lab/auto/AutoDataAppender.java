@@ -2,8 +2,12 @@ package net.that_recsys_lab.auto;
 
 import com.google.common.collect.*;
 import net.librec.data.convertor.TextDataConvertor;
-import net.librec.math.structure.SparseMatrix;
+import net.librec.math.structure.DataFrame;
+import net.librec.math.structure.SequentialAccessSparseMatrix;
 import net.librec.util.StringUtil;
+import okio.BufferedSource;
+import okio.Okio;
+import okio.Source;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,8 +20,11 @@ import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * Made by @WangYuFeng and @liuxz
@@ -25,7 +32,8 @@ import java.util.concurrent.TimeUnit;
  * Additions From:
  * @ WIL-Lab
  * @ ALdo-OG
-  */
+ * @ Masoud Mansoury
+ */
 
 public class AutoDataAppender extends TextDataConvertor {
     /**
@@ -84,9 +92,15 @@ public class AutoDataAppender extends TextDataConvertor {
     private float loadAllFileRate;
 
 
+    private String[] m_header;
+    private String[] m_attr;
+    private String m_sep;
+    private float m_fileRate;
+
     public AutoDataAppender(String path) {
         super(path);
         inputDataPath = path;
+        this.m_sep = "[ \\t,]+";
     }
 
     /**
@@ -96,144 +110,67 @@ public class AutoDataAppender extends TextDataConvertor {
      */
     @Override
     public void processData() throws IOException {
-        readDataAuto(DATA_COLUMN_DEFAULT_FORMAT, inputDataPath, binThold);
+        readDataAuto(inputDataPath);
     }
 
-    /**
-     * Read data from the data file. Note that we didn't take care of the
-     * duplicated lines.
-     *
-     * @param dataColumnFormat the format of input data file
-     * @param inputDataPath    the path of input data file
-     * @param binThold         the threshold to binarize a rating. If a rating is greater
-     *                         than the threshold, the value will be 1; otherwise 0. To
-     *                         disable this appender, i.e., keep the original rating value,
-     *                         set the threshold a negative value
-     * @throws IOException if the <code>inputDataPath</code> is not valid.
-     */
-    private void readDataAuto(String dataColumnFormat, String inputDataPath, double binThold) throws IOException {
-        LOG.info(String.format("Dataset: %s", StringUtil.last(inputDataPath, 38)));
-        // Table {row-id, col-id, rate}
-        Table<Integer, Integer, Double> dataTable = HashBasedTable.create();
-        // Table {row-id, col-id, timestamp}
-        Table<Integer, Integer, Long> timeTable = null;
-        // Map {col-id, multiple row-id}: used to fast build a rating matrix
-        Multimap<Integer, Integer> colMap = HashMultimap.create();
 
-        if (this.userIds == null) {
-            this.userIds = HashBiMap.create();
+    private void readDataAuto(String... inputDataPath) throws IOException {
+        LOG.info(String.format("Dataset: %s", Arrays.toString(inputDataPath)));
+        matrix = new DataFrame();
+        if (Objects.isNull(m_header)) {
+            if (DATA_COLUMN_DEFAULT_FORMAT.toLowerCase().equals("uirt")) {
+                m_header = new String[]{"user", "item", "rating", "datetime"};
+                m_attr = new String[]{"STRING", "STRING", "NUMERIC", "DATE"};
+            } else {
+                m_header = new String[]{"user", "item", "rating"};
+                m_attr = new String[]{"STRING", "STRING", "NUMERIC"};
+            }
         }
-        if (this.itemIds == null) {
-            this.itemIds = HashBiMap.create();
-        }
-        final List<File> files = new ArrayList<>();
-        final ArrayList<Long> fileSizeList = new ArrayList<>();
+
+        matrix.setAttrType(m_attr);
+        matrix.setHeader(m_header);
+        List<File> files = new ArrayList<>();
         SimpleFileVisitor<Path> finder = new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                fileSizeList.add(file.toFile().length());
                 files.add(file.toFile());
                 return super.visitFile(file, attrs);
             }
         };
-        for (String path : inputDataPath.trim().split(" ")) {
-            Files.walkFileTree(Paths.get(path), finder);
+        for (String path : inputDataPath) {
+            Files.walkFileTree(Paths.get(path.trim()), finder);
         }
-
-        LOG.info("All dataset files " + files.toString());
-        long allFileSize = 0;
-        for (Long everyFileSize : fileSizeList) {
-            allFileSize = allFileSize + everyFileSize;
-        }
-        LOG.info("All dataset files size " + Long.toString(allFileSize));
-        int readingFileCount = 0;
-        long loadAllFileByte = 0;
-        // loop every dataFile collecting from walkFileTree
-
-        for (File dataFile : files) {
-            LOG.info("Now loading dataset file " + dataFile.toString().substring(dataFile.toString().lastIndexOf(File.separator) + 1, dataFile.toString().lastIndexOf(".")));
-
-            readingFileCount += 1;
-            loadFilePathRate = readingFileCount / (float) files.size();
-            long readingOneFileByte = 0;
-            FileInputStream fis = new FileInputStream(dataFile);
-            FileChannel fileRead = fis.getChannel();
-            ByteBuffer buffer = ByteBuffer.allocate(BSIZE);
-            int len;
-            String bufferLine = "";
-            byte[] bytes = new byte[BSIZE];
-
-            while ((len = fileRead.read(buffer)) != -1) {
-                readingOneFileByte += len;
-                loadDataFileRate = readingOneFileByte / (float) fileRead.size();
-                loadAllFileByte += len;
-                loadAllFileRate = loadAllFileByte / (float) allFileSize;
-                buffer.flip();
-                buffer.get(bytes, 0, len);
-                bufferLine = bufferLine.concat(new String(bytes, 0, len));
-                bufferLine = bufferLine.replaceAll("\r", "\n");
-                String[] bufferData = bufferLine.split("(\n)+");
-                boolean isComplete = bufferLine.endsWith("\n");
-                int loopLength = isComplete ? bufferData.length : bufferData.length - 1;
-                for (int i = 0; i < loopLength; i++) {
-                    String line = bufferData[i];
-                    String[] data = line.trim().split("[ \t,]+");
-                    String user = data[0];
-                    String item = data[1];
-                    Double rate = ((dataColumnFormat.equals("UIR") || dataColumnFormat.equals("UIRT")) && data.length >= 3) ? Double.valueOf(data[2]) : 1.0;
-
-                    // binarize the rating for item recommendation task
-                    if (binThold >= 0) {
-                        rate = rate > binThold ? 1.0 : 0.0;
+        int numFiles = files.size();
+        int cur = 0;
+        Pattern pattern = Pattern.compile(m_sep);
+        for (File file : files) {
+            try (Source fileSource = Okio.source(file);
+                 BufferedSource bufferedSource = Okio.buffer(fileSource)) {
+                String temp;
+                while ((temp = bufferedSource.readUtf8Line()) != null) {
+                    if ("".equals(temp.trim())) {
+                        break;
                     }
-                    //////////////////////// Auto ///////////////////////////
-                    if (rate == 0){
-                        rate = -2.0;
-                    }
-                    /////////////////////////////////////////////////////////
-
-                    // inner id starting from 0
-                    int row = this.userIds.containsKey(user) ? this.userIds.get(user) : this.userIds.size();
-                    this.userIds.put(user, row);
-
-                    int col = this.itemIds.containsKey(item) ? this.itemIds.get(item) : this.itemIds.size();
-                    this.itemIds.put(item, col);
-
-                    dataTable.put(row, col, rate);
-                    colMap.put(col, row);
-                    // record rating's issuing time
-                    if (StringUtils.equals(dataColumnFormat, "UIRT") && data.length >= 4) {
-                        if (timeTable == null) {
-                            timeTable = HashBasedTable.create();
+                    String[] eachRow = pattern.split(temp);
+                    for (int i = 0; i < m_header.length; i++) {
+                        if (Objects.equals(m_attr[i], "STRING")) {
+                            DataFrame.setId(eachRow[i], matrix.getHeader(i));
                         }
-                        // convert to million-seconds
-                        long mms = 0L;
-                        try {
-                            mms = Long.parseLong(data[3]); // cannot format
-                            // 9.7323480e+008
-                        } catch (NumberFormatException e) {
-                            mms = (long) Double.parseDouble(data[3]);
-                        }
-                        long timestamp = timeUnit.toMillis(mms);
-                        timeTable.put(row, col, timestamp);
                     }
+                    matrix.add(eachRow);
                 }
-                if (!isComplete) {
-                    bufferLine = bufferData[bufferData.length - 1];
-                }
-                buffer.clear();
+                LOG.info(String.format("DataSet: %s is finished", StringUtil.last(file.toString(), 38)));
+                cur++;
+                m_fileRate = cur / numFiles;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            fileRead.close();
-            fis.close();
         }
-        int numRows = numUsers(), numCols = numItems();
-        // build rating matrix
-        preferenceMatrix = new SparseMatrix(numRows, numCols, dataTable, colMap);
-        if (timeTable != null)
-            datetimeMatrix = new SparseMatrix(numRows, numCols, timeTable, colMap);
-        // release memory of data table
-        dataTable = null;
-        timeTable = null;
+//        List<Double> ratingScale = matrix.getRatingScale();
+//        if (ratingScale != null) {
+//            LOG.info(String.format("rating Scale: %s", ratingScale.toString()));
+//        }
+        LOG.info(String.format("user number: %d,\t item number is: %d", matrix.numUsers(), matrix.numItems()));
     }
 
     /**
@@ -290,6 +227,4 @@ public class AutoDataAppender extends TextDataConvertor {
     public BiMap<String, Integer> getItemIds() {
         return itemIds;
     }
-
-
 }

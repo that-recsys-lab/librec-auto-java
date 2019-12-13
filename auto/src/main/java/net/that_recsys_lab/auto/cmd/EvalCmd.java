@@ -1,5 +1,6 @@
 package net.that_recsys_lab.auto.cmd;
 
+import net.librec.recommender.RecommenderContext;
 import net.that_recsys_lab.auto.AutoRecommenderJob;
 import net.that_recsys_lab.auto.IJobCmd;
 import net.librec.common.LibrecException;
@@ -31,8 +32,9 @@ public class EvalCmd implements IJobCmd {
     public void execute() throws LibrecException, IOException, ClassNotFoundException {
         job.getLOG().info("EvalCMD: START");
         Recommender recommender = job.m_recommenders.get(this.m_splitId-1);
-        job.executeEvaluatorAutoOverload(recommender);
-        List<RecommendedItem> recommendedList = recommender.getRecommendedList(); // -> is this call necessary?
+        RecommenderContext context = new RecommenderContext(job.getConf());
+        job.executeEvaluatorAutoOverload(recommender, context);
+        List<RecommendedItem> recommendedList = recommender.getRecommendedList(recommender.recommendRank()); // -> is this call necessary?
         recommendedList = filterResult(recommendedList); // -> is this call necessary?
         saveResult(recommendedList); // -> redundant to save results if using results already
         job.getLOG().info("EvalCMD: COMPLETE.");
