@@ -37,10 +37,7 @@ public class CheckCmd implements IJobCmd {
 
         // Extract classes and paths
         String recommenderClass = job.getConf().get("rec.recommender.class");
-//        job.getLOG().info("conf " + recommenderClass);
         String similarityClass = job.getConf().get("rec.similarity.class");
-//        job.getLOG().info("conf " + similarityClass);
-        // evaluator class
         String evaluatorClass = job.getConf().get("rec.eval.classes");
 
         // required
