@@ -108,13 +108,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
 
         switch (arg) {
             case "check":
-                cmds = new ArrayList<IJobCmd>(m_cvCount);
-                for (int i = 1; i <= m_cvCount; i++) {
-                    List<IJobCmd> subcmds = new ArrayList<IJobCmd>();
-                    subcmds.add(new CheckCmd(this));
-                    cmds.add(new SeqCmd(this, subcmds));
-                }
-                this.m_commands.add(new SeqCmd(this, cmds));
+                this.m_commands.add(new CheckCmd(this));
                 break;
             case "split":
 //                    this.m_commands.add(new SplitCmd(this));
@@ -126,7 +120,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 }
                 this.m_commands.add(new SeqCmd(this, cmds));
                 break;
-            case "reRunEval":
+            case "re-eval":
 //                for (int i = 1; i <= m_cvCount; i++) {
 //                    this.m_commands.add(new ReRunEvalCmd(this, i));
 //                }

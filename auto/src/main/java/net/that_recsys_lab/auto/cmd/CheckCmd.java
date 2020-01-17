@@ -20,30 +20,51 @@ public class CheckCmd implements IJobCmd {
         this.job = job;
     }
 
-    private void checkPath(String path) throws FileNotFoundException, NotDirectoryException {
+    private void checkPath(String pathkey) {
         // in case it is a path that's relative to another path property
-        File pathObj = new File(job.getConf().get(path));
+        File pathObj = new File(job.getConf().get(pathkey));
 
         if (!pathObj.exists()) {
-            throw new FileNotFoundException(path + " " + pathObj + " does not exist.");
+            job.getLOG().info("Error: "  + pathkey + " " + pathObj + " does not exist.");
         }
         else if (!pathObj.isDirectory()) {
-            throw new NotDirectoryException(path + " " + pathObj + " exists but is not a directory.");
+            job.getLOG().info("Error: " + pathkey + " " + pathObj + " exists but is not a directory.");
+        }
+    }
+
+    private void checkClasses(String classeskey) {
+        String[] asClass = job.getConf().getStrings(classeskey);
+        for (int i = 0; i < asClass.length; i++) {
+            checkClass1(classeskey, asClass[i]);
+        }
+    }
+
+    private void checkClass(String classkey) {
+        String sClass = job.getConf().get(classkey);
+        //job.getLOG().info("Checking class: " + classkey + " " + sClass);
+        checkClass1(classkey, sClass);
+    }
+
+    private void checkClass1(String classkey, String sClass) {
+        if (sClass == null) {
+            job.getLOG().info("Warning: " + classkey + " is null.");
+            return;
+        } else {
+            try {
+                DriverClassUtil.getClass(sClass);
+            } catch (ClassNotFoundException e) {
+                job.getLOG().info("Error: " + classkey + " " + sClass + " does not exist.");
+            }
         }
     }
 
     public void execute() throws LibrecException, IOException, ClassNotFoundException {
         job.getLOG().info("CheckCmd: START");
 
-        // Extract classes and paths
-        String recommenderClass = job.getConf().get("rec.recommender.class");
-        String similarityClass = job.getConf().get("rec.similarity.class");
-        String evaluatorClass = job.getConf().get("rec.eval.classes");
-
-        // required
-        job.getLOG().info(DriverClassUtil.getClass(recommenderClass));
-        job.getLOG().info(DriverClassUtil.getClass(similarityClass));
-        job.getLOG().info(DriverClassUtil.getClass(evaluatorClass));
+        // Check classes and paths
+        checkClass("rec.recommender.class");
+        checkClass("rec.similarity.class");
+        checkClasses("rec.eval.classes");
 
         // required
         checkPath("dfs.data.dir");
@@ -51,13 +72,12 @@ public class CheckCmd implements IJobCmd {
         checkPath("dfs.log.dir");
         File dataInputPath = new File(job.getConf().get("dfs.data.dir") + "/" + job.getConf().get("data.input.path"));
         if (!dataInputPath.exists()) {
-            throw new FileNotFoundException(dataInputPath + " does not exist.");
+            job.getLOG().info("Error: Data input path " + dataInputPath + " does not exist.");
         }
         else if (dataInputPath.isDirectory() && dataInputPath.list().length == 0) {
-            throw new IOException(dataInputPath + " is an empty directory.");
+            job.getLOG().info("Error: Data input path " + dataInputPath + " exists but is empty.");
         }
-        checkPath("data.input.path");
-
+        //checkPath("data.input.path");
 
         job.getLOG().info("CheckCmd: FINISH");
     }
