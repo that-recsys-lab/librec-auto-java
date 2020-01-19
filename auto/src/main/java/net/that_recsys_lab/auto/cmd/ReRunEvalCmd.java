@@ -47,7 +47,7 @@ public class ReRunEvalCmd implements IJobCmd {
         getConf().set("data.splitter.cv.index", String.valueOf(this.m_splitId));
         getConf().set("data.input.path", trainFileNameGen().substring(dataDir, endingIndex));
         getConf().set("data.testset.path", testFileNameGen().substring(dataDir));
-//        job.getData().buildDataModel();
+        job.getData().buildDataModel();
         recalculateMetrics();
     }
 
@@ -66,21 +66,7 @@ public class ReRunEvalCmd implements IJobCmd {
         job.generateSimilarityAutoOverload(context);
         Recommender recommender = (Recommender) ReflectionUtil.newInstance((Class<Recommender>) job.getRecommenderClass(), getConf());
         recommender.recommend(context);
-        job.executeEvaluatorAutoOverload(recommender, context);
-
-
-//        RecommenderContext context = new RecommenderContext(getConf(), job.getData());
-//        job.generateSimilarityAutoOverload(context);
-//        Recommender recommender = (Recommender) ReflectionUtil.newInstance((Class<Recommender>) job.getRecommenderClass(), getConf());
-//
-//        boolean isRanking = getConf().getBoolean("rec.recommender.isranking");
-//        if (isRanking){
-//            recommender.getRecommendedList(recommender.recommendRank());
-//        } else {
-//            recommender.getRecommendedList(recommender.recommendRating(context.getDataModel().getTestDataSet()));
-//        }
-//        recommender.train(context);
-//        job.executeEvaluatorAutoOverload(recommender, context);
+        job.executeEvaluatorAutoOverload(recommender);
     }
 
     /**                              ~  Auto Aux functions  ~

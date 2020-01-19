@@ -2,13 +2,8 @@ package net.that_recsys_lab.auto;
 
 import com.google.common.collect.*;
 import net.librec.data.convertor.TextDataConvertor;
-//import net.librec.math.structure.DataFrame;
-//import net.librec.math.structure.SequentialAccessSparseMatrix;
 import net.librec.math.structure.SparseMatrix;
 import net.librec.util.StringUtil;
-//import okio.BufferedSource;
-//import okio.Okio;
-//import okio.Source;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,11 +16,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * Made by @WangYuFeng and @liuxz
@@ -33,8 +25,7 @@ import java.util.regex.Pattern;
  * Additions From:
  * @ WIL-Lab
  * @ ALdo-OG
- * @ Masoud Mansoury
- */
+  */
 
 public class AutoDataAppender extends TextDataConvertor {
     /**
@@ -93,15 +84,9 @@ public class AutoDataAppender extends TextDataConvertor {
     private float loadAllFileRate;
 
 
-    private String[] m_header;
-    private String[] m_attr;
-    private String m_sep;
-    private float m_fileRate;
-
     public AutoDataAppender(String path) {
         super(path);
         inputDataPath = path;
-        this.m_sep = "[ \\t,]+";
     }
 
     /**
@@ -112,7 +97,6 @@ public class AutoDataAppender extends TextDataConvertor {
     @Override
     public void processData() throws IOException {
         readDataAuto(DATA_COLUMN_DEFAULT_FORMAT, inputDataPath, binThold);
-//        readDataAuto(inputDataPath);
     }
 
     /**
@@ -252,66 +236,6 @@ public class AutoDataAppender extends TextDataConvertor {
         timeTable = null;
     }
 
-
- /*   private void readDataAuto(String... inputDataPath) throws IOException {
-        LOG.info(String.format("Dataset: %s", Arrays.toString(inputDataPath)));
-        matrix = new DataFrame();
-        if (Objects.isNull(m_header)) {
-            if (DATA_COLUMN_DEFAULT_FORMAT.toLowerCase().equals("uirt")) {
-                m_header = new String[]{"user", "item", "rating", "datetime"};
-                m_attr = new String[]{"STRING", "STRING", "NUMERIC", "DATE"};
-            } else {
-                m_header = new String[]{"user", "item", "rating"};
-                m_attr = new String[]{"STRING", "STRING", "NUMERIC"};
-            }
-        }
-
-        matrix.setAttrType(m_attr);
-        matrix.setHeader(m_header);
-        List<File> files = new ArrayList<>();
-        SimpleFileVisitor<Path> finder = new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                files.add(file.toFile());
-                return super.visitFile(file, attrs);
-            }
-        };
-        for (String path : inputDataPath) {
-            Files.walkFileTree(Paths.get(path.trim()), finder);
-        }
-        int numFiles = files.size();
-        int cur = 0;
-        Pattern pattern = Pattern.compile(m_sep);
-        for (File file : files) {
-            try (Source fileSource = Okio.source(file);
-                 BufferedSource bufferedSource = Okio.buffer(fileSource)) {
-                String temp;
-                while ((temp = bufferedSource.readUtf8Line()) != null) {
-                    if ("".equals(temp.trim())) {
-                        break;
-                    }
-                    String[] eachRow = pattern.split(temp);
-                    for (int i = 0; i < m_header.length; i++) {
-                        if (Objects.equals(m_attr[i], "STRING")) {
-                            DataFrame.setId(eachRow[i], matrix.getHeader(i));
-                        }
-                    }
-                    matrix.add(eachRow);
-                }
-                LOG.info(String.format("DataSet: %s is finished", StringUtil.last(file.toString(), 38)));
-                cur++;
-                m_fileRate = cur / numFiles;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-//        List<Double> ratingScale = matrix.getRatingScale();
-//        if (ratingScale != null) {
-//            LOG.info(String.format("rating Scale: %s", ratingScale.toString()));
-//        }
-        LOG.info(String.format("user number: %d,\t item number is: %d", matrix.numUsers(), matrix.numItems()));
-    }
-*/
     /**
      * Return the number of users.
      *
@@ -366,4 +290,6 @@ public class AutoDataAppender extends TextDataConvertor {
     public BiMap<String, Integer> getItemIds() {
         return itemIds;
     }
+
+
 }
