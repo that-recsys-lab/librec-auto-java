@@ -59,18 +59,10 @@ public class SplitCmd implements IJobCmd {
      */
     private void SplitData() throws LibrecException, IOException, ClassNotFoundException {
         job.getLOG().info("SplitCMD: START - Splitting training and testing.");
-        if (job.getCVCount() > 1) {
-            for (int i = 1; i <= job.getCVCount(); i++) {
-                getConf().set("data.splitter.cv.index", String.valueOf(this.m_splitId));
-                SaveGivenSplitData(this.m_splitId);
-                job.getLOG().info("SplitCmd: COMPLETE");
-            }
-        } else {
-                getConf().set("data.splitter.cv.index", String.valueOf(this.m_splitId));
-                SaveGivenSplitData(this.m_splitId);
-                job.getLOG().info("SplitCmd: COMPLETE");
-            }
-        }
+        getConf().set("data.splitter.cv.index", String.valueOf(this.m_splitId));
+        SaveGivenSplitData(this.m_splitId);
+        job.getLOG().info("SplitCmd: COMPLETE");
+    }
 //        if(job.m_data.hasNextFold()) {
 //            job.m_data.nextFold();
 //            if(m_saveToFile) {
