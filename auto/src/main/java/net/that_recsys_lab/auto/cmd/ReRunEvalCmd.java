@@ -65,7 +65,7 @@ public class ReRunEvalCmd implements IJobCmd {
         RecommenderContext context = new RecommenderContext(getConf(), job.getData());
         job.generateSimilarityAutoOverload(context);
         Recommender recommender = (Recommender) ReflectionUtil.newInstance((Class<Recommender>) job.getRecommenderClass(), getConf());
-        recommender.train(context);
+        recommender.recommend(context);
         job.executeEvaluatorAutoOverload(recommender, context);
 
 

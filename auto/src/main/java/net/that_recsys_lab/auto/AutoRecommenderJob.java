@@ -1,9 +1,12 @@
 package net.that_recsys_lab.auto;
 
 import com.google.common.collect.BiMap;
-import net.librec.math.structure.SequentialAccessSparseMatrix;
-import net.librec.math.structure.SequentialSparseVector;
-import net.librec.math.structure.Vector;
+//import net.librec.math.structure.SequentialAccessSparseMatrix;
+//import net.librec.math.structure.SequentialSparseVector;
+//import net.librec.math.structure.Vector;
+import net.librec.math.structure.SparseMatrix;
+import net.librec.math.structure.SparseVector;
+import net.librec.math.structure.VectorEntry;
 import net.librec.util.FileUtil;
 import net.that_recsys_lab.auto.cmd.*;
 
@@ -11,7 +14,7 @@ import net.librec.common.LibrecException;
 import net.librec.data.DataSplitter;
 import net.librec.data.splitter.KCVDataSplitter;
 import net.librec.data.splitter.LOOCVDataSplitter;
-import net.librec.eval.EvalContext;
+//import net.librec.eval.EvalContext;
 import net.librec.eval.Measure;
 import net.librec.eval.RecommenderEvaluator;
 import net.librec.filter.RecommendedFilter;
@@ -228,18 +231,18 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
      */
     public void executeEvaluatorAutoOverload(Recommender recommender, RecommenderContext context) throws ClassNotFoundException, IOException, LibrecException {
         if (m_conf.getBoolean("rec.eval.enable")) {
-            DataSet dataSet =  m_data.getTestDataSet();
-            String[] similarityKeys = m_conf.getStrings("rec.recommender.similarities");
-            EvalContext evalContext = null;
-            if (similarityKeys != null && similarityKeys.length > 0) {
-                if(context.getSimilarity() == null)
-                    this.generateSimilarityAutoOverload(context);
-                SymmMatrix similarityMatrix = context.getSimilarity().getSimilarityMatrix();
-                Map<String, RecommenderSimilarity> similarities = context.getSimilarities();
-                evalContext = new EvalContext(m_conf, recommender, dataSet, similarityMatrix, similarities);
-            } else {
-                evalContext = new EvalContext(m_conf, recommender, dataSet);
-            }
+//            DataSet dataSet =  m_data.getTestDataSet();
+//            String[] similarityKeys = m_conf.getStrings("rec.recommender.similarities");
+//            EvalContext evalContext = null;
+//            if (similarityKeys != null && similarityKeys.length > 0) {
+//                if(context.getSimilarity() == null)
+//                    this.generateSimilarityAutoOverload(context);
+//                SymmMatrix similarityMatrix = context.getSimilarity().getSimilarityMatrix();
+//                Map<String, RecommenderSimilarity> similarities = context.getSimilarities();
+//                evalContext = new EvalContext(m_conf, recommender, dataSet, similarityMatrix, similarities);
+//            } else {
+//                evalContext = new EvalContext(m_conf, recommender, dataSet);
+//            }
 
 
             String[] evalClassKeys = m_conf.getStrings("rec.eval.classes");
@@ -249,7 +252,8 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                     RecommenderEvaluator evaluator = ReflectionUtil.newInstance(getEvaluatorClass(evalClassKeys[classIdx]), null);
                     evaluator.setTopN(m_conf.getInt("rec.recommender.ranking.topn", 10));
 
-                    double evalValue = evaluator.evaluate(evalContext);
+//                    double evalValue = evaluator.evaluate(evalContext);
+                    double evalValue = recommender.evaluate(evaluator);
                     LOG.info("Evaluator info:" + evaluator.getClass().getSimpleName() + " is " + evalValue);
                     collectCVResults(evaluator.getClass().getSimpleName(), evalValue);
                 }
@@ -271,7 +275,8 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                         if (isRanking && measureValue.getTopN() != null && measureValue.getTopN() > 0) {
                             evaluator.setTopN(measureValue.getTopN());
                         }
-                        double evaluatedValue = evaluator.evaluate(evalContext);
+ //                       double evaluatedValue = evaluator.evaluate(evalContext);
+                        double evaluatedValue = recommender.evaluate(evaluator);
                         m_evaluatedMap.put(measureValue, evaluatedValue);
                     }
                 }
@@ -361,18 +366,18 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
     }
 
     // Should be removed
-    public void SaveSplittedData(SequentialAccessSparseMatrix data, int foldNum, String dataType){
+    public void SaveSplittedData(SparseMatrix data, int foldNum, String dataType){
         StringBuilder sb = new StringBuilder();
         BiMap<String, Integer> userMapping = getData().getUserMappingData();
         BiMap<String, Integer> itemMapping = getData().getItemMappingData();
         if (userMapping != null && userMapping.size() > 0 && itemMapping != null && itemMapping.size() > 0) {
             BiMap<Integer, String> userMappingInverse = userMapping.inverse();
             BiMap<Integer, String> itemMappingInverse = itemMapping.inverse();
-            for(int u = 0; u < data.rowSize(); u++){
-                SequentialSparseVector u_recs = data.row(u);
+            for(int u = 0; u < data.numRows(); u++){
+                SparseVector u_recs = data.row(u);
 //                for(int j = 0; j < u_recs.size(); j++) {
 //                    Vector.VectorEntry q = u_recs.getVectorEntry(0);
-                for(Vector.VectorEntry entry : u_recs){
+                for(VectorEntry entry : u_recs){
                     String userId = userMappingInverse.get(u);
                     String itemId = itemMappingInverse.get(entry.index());
                     sb.append(userId).append("\t").append(itemId).append("\t").append(String.valueOf(entry.get())).append("\n");

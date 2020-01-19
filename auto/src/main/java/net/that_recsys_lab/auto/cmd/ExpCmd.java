@@ -74,27 +74,30 @@ public class ExpCmd implements IJobCmd{
 //        job.getData().buildDataModel();
         RecommenderContext context = new RecommenderContext(getConf(), job.getData());
         Recommender recommender = (Recommender) ReflectionUtil.newInstance((Class<Recommender>) job.getRecommenderClass(), getConf());
-//        job.m_cvEvalResults = new HashMap<>();
+        job.generateSimilarityAutoOverload(context);
+        recommender.recommend(context);
+        job.m_recommenders.add(this.m_splitId-1, recommender);
 
-        if(job.m_data.getDataSplitter().getTrainData() == null)
-            job.getLOG().info("1. train data is null");
-        if(job.m_data.getDataSplitter().getTrainData() == null)
-            job.m_data.hasNextFold();
-        job.m_data.nextFold();
-        context.setDataModel(job.getData());
-        if(job.m_data.getDataSplitter().getTrainData() == null)
-            job.getLOG().info("2. train data is null");
+        //        job.m_cvEvalResults = new HashMap<>();
+
+//        if(job.m_data.getDataSplitter().getTrainData() == null)
+//            job.getLOG().info("1. train data is null");
+//        if(job.m_data.getDataSplitter().getTrainData() == null)
+//            job.m_data.hasNextFold();
+//        job.m_data.nextFold();
+//        context.setDataModel(job.getData());
+//        if(job.m_data.getDataSplitter().getTrainData() == null)
+//            job.getLOG().info("2. train data is null");
 
         //Should be removed
-        job.SaveSplittedData(job.m_data.getDataSplitter().getTrainData(), this.m_splitId, "train");
-        job.SaveSplittedData(job.m_data.getDataSplitter().getTestData(), this.m_splitId, "test");
+        // 2020-01-19 RB Removed, but am not sure that the split data is saved elsewhere
+        //job.SaveSplittedData(job.m_data.getDataSplitter().getTrainData(), this.m_splitId, "train");
+        //job.SaveSplittedData(job.m_data.getDataSplitter().getTestData(), this.m_splitId, "test");
 
 //        if(job.m_data.hasNextFold()) {
 //            job.m_data.nextFold();
 //            context.setDataModel(job.m_data);
-            job.generateSimilarityAutoOverload(context);
-            recommender.train(context);
-            job.m_recommenders.add(this.m_splitId-1, recommender);
+
 //            job.executeEvaluatorAutoOverload(recommender, context);
 //            getConf().set("data.splitter.cv.index", String.valueOf(this.m_splitId));
 //            boolean isRanking = getConf().getBoolean("rec.recommender.isranking");

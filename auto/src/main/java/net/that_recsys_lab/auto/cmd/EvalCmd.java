@@ -34,7 +34,7 @@ public class EvalCmd implements IJobCmd {
         Recommender recommender = job.m_recommenders.get(this.m_splitId-1);
         RecommenderContext context = new RecommenderContext(job.getConf());
         job.executeEvaluatorAutoOverload(recommender, context);
-        List<RecommendedItem> recommendedList = recommender.getRecommendedList(recommender.recommendRank()); // -> is this call necessary?
+        List<RecommendedItem> recommendedList = recommender.getRecommendedList(); // -> is this call necessary?
         recommendedList = filterResult(recommendedList); // -> is this call necessary?
         saveResult(recommendedList); // -> redundant to save results if using results already
         job.getLOG().info("EvalCMD: COMPLETE.");

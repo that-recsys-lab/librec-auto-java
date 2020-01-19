@@ -1,12 +1,13 @@
 package net.that_recsys_lab.auto;
 
-import net.librec.data.structure.*;
+//import net.librec.data.structure.*;
 import com.google.common.collect.BiMap;
 import net.librec.common.LibrecException;
 import net.librec.data.convertor.TextDataConvertor;
-import net.librec.math.structure.SequentialAccessSparseMatrix;
+//import net.librec.math.structure.SequentialAccessSparseMatrix;
+import net.librec.math.structure.SparseMatrix;
 import net.librec.recommender.AbstractRecommender;
-import net.librec.recommender.MatrixRecommender;
+//import net.librec.recommender.MatrixRecommender;
 import net.librec.recommender.item.ItemEntry;
 import net.librec.recommender.item.RecommendedItem;
 import net.librec.recommender.item.RecommendedList;
@@ -21,8 +22,10 @@ import java.util.*;
  * @Aldo-OG
  *
  */
-public class OracleAlgo extends MatrixRecommender {
-    private SequentialAccessSparseMatrix resultsMatrix;
+//public class OracleAlgo extends MatrixRecommender {
+public class OracleAlgo extends AbstractRecommender {
+//    private SequentialAccessSparseMatrix resultsMatrix;
+    private SparseMatrix resultsMatrix;
     private TextDataConvertor resultsModel;
     private BiMap<Integer, String> userMappingInverse;
     private BiMap<Integer, String> itemMappingInverse;
@@ -39,8 +42,10 @@ public class OracleAlgo extends MatrixRecommender {
             // Flip requested inner ids to outer ids for split data.
             userMappingInverse = userMappingData.inverse();
             itemMappingInverse = itemMappingData.inverse();
-            result_userMapping = resultsModel.getMatrix().getUserIds();
-            result_itemMapping = resultsModel.getMatrix().getItemIds();
+//            result_userMapping = resultsModel.getMatrix().getUserIds();
+//            result_itemMapping = resultsModel.getMatrix().getItemIds();
+            result_userMapping = resultsModel.getUserIds();
+            result_itemMapping = resultsModel.getItemIds();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -106,7 +111,7 @@ public class OracleAlgo extends MatrixRecommender {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        SequentialAccessSparseMatrix temp = tempResultModel.getPreferenceMatrix();
+        SparseMatrix temp = tempResultModel.getPreferenceMatrix();
         resultsMatrix = temp.clone();
         resultsModel = tempResultModel;
     }
