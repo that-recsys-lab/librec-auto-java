@@ -62,14 +62,17 @@ public class CheckCmd implements IJobCmd {
         job.getLOG().info("CheckCmd: START");
 
         // Check classes and paths
+        job.getLOG().info("CheckCmd: Checking class names");
         checkClass("rec.recommender.class");
         checkClass("rec.similarity.class");
         checkClasses("rec.eval.classes");
 
         // required
+        job.getLOG().info("CheckCmd: Checking files and paths");
         checkPath("dfs.data.dir");
         checkPath("dfs.result.dir");
-        checkPath("dfs.log.dir");
+        // The log directories are experiment-by-experiment, so don't belong at the top level.
+        //checkPath("dfs.log.dir");
         File dataInputPath = new File(job.getConf().get("dfs.data.dir") + "/" + job.getConf().get("data.input.path"));
         if (!dataInputPath.exists()) {
             job.getLOG().info("Error: Data input path " + dataInputPath + " does not exist.");
