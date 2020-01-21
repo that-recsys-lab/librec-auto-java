@@ -126,7 +126,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 break;
 
             default: {
-                System.out.println("You've failed to enter a proper command.  LibRecAuto Terminating.");
+                System.out.println("You've failed to enter a proper command: " + arg + ".  LibRecAuto Terminating.");
                 return;
             }
         }
@@ -171,8 +171,9 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         String[] similarityKeys = m_conf.getStrings("rec.recommender.similarities");
         if (similarityKeys != null && similarityKeys.length > 0) {
             for(int i = 0; i< similarityKeys.length; i++){
-                if (getSimilarityClass() != null) {
-                    RecommenderSimilarity similarity = (RecommenderSimilarity) ReflectionUtil.newInstance(getSimilarityClass(), m_conf);
+                if (this.getSimilarityClass(i) != null) {
+                    RecommenderSimilarity similarity =
+                            (RecommenderSimilarity) ReflectionUtil.newInstance(this.getSimilarityClass(i), m_conf);
                     m_conf.set("rec.recommender.similarity.key", similarityKeys[i]);
                     similarity.buildSimilarityMatrix(m_data);
                     if(i == 0){
