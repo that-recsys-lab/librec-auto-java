@@ -202,6 +202,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 // designated.
                 for(int classIdx = 0; classIdx < evalClassKeys.length; ++classIdx) {
                     RecommenderEvaluator evaluator = (RecommenderEvaluator) ReflectionUtil.newInstance(getEvaluatorClass(evalClassKeys[classIdx]), null);
+                    evaluator.setDataModel(this.m_data);
                     evaluator.setTopN(m_conf.getInt("rec.recommender.ranking.topn", 10));
                     double evalValue = recommender.evaluate(evaluator);
                     LOG.info("Evaluator info:" + evaluator.getClass().getSimpleName() + " is " + evalValue);
