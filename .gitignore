@@ -19,8 +19,20 @@
 *.tar.gz
 *.rar
 
+# Manifest
+*.MF
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
 # IntelliJ
 .idea/
+
+*.DS_Store
+**/.DS_Store
+
+auto/classes/
+auto/out/artifacts/.DS_Store
+auto/out/.DS_Store
+auto/.DS_Store
+
