@@ -42,8 +42,8 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         super(conf);
         this.m_conf = conf;
         this.m_modelSplit = conf.get("data.model.splitter");  // Error handle this
+        this.m_cvEvalResults = new HashMap<>();
         if (m_modelSplit.equals("kcv")) { // or 'locv'
-            this.m_cvEvalResults = new HashMap<>();
             m_cvCount = m_conf.getInt("data.splitter.cv.number", 1);
         } else {
             m_cvCount = 1;
