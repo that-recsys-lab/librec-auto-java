@@ -1,23 +1,36 @@
 package net.that_recsys_lab.auto.cmd;
 
 import com.google.common.collect.BiMap;
+import net.librec.math.structure.SequentialAccessSparseMatrix;
+import net.librec.math.structure.SequentialSparseVector;
 import net.that_recsys_lab.auto.AutoRecommenderJob;
 import net.that_recsys_lab.auto.IJobCmd;
 import net.librec.common.LibrecException;
 import net.librec.conf.Configuration;
-import net.librec.math.structure.SparseMatrix;
-import net.librec.math.structure.SparseVector;
-import net.librec.math.structure.VectorEntry;
+import net.librec.math.structure.SequentialAccessSparseMatrix;
+import net.librec.math.structure.SequentialAccessSparseMatrix;
+import net.librec.math.structure.Vector.VectorEntry;
 import net.librec.util.FileUtil;
 
 import java.io.IOException;
 
 public class SplitCmd implements IJobCmd {
     private AutoRecommenderJob job;
+    private int m_splitId;
+    private boolean m_saveToFile = true;
 
     // C'tor
     public SplitCmd(AutoRecommenderJob job) {
         this.job = job;
+    }
+    public SplitCmd(AutoRecommenderJob job, int splitId){
+        this.job = job;
+        this.m_splitId = splitId;
+    }
+    public SplitCmd(AutoRecommenderJob job, int splitId, boolean saveToFile){
+        this.job = job;
+        this.m_splitId = splitId;
+        this.m_saveToFile = saveToFile;
     }
     private Double splitRatio;
 
@@ -44,16 +57,34 @@ public class SplitCmd implements IJobCmd {
      */
     private void SplitData() throws LibrecException, IOException, ClassNotFoundException {
         job.getLOG().info("SplitCMD: START - Splitting training and testing.");
-        if (job.getCVCount() > 1) {
-            for (int i = 1; i <= job.getCVCount(); i++) {
-                getConf().set("data.splitter.cv.index", String.valueOf(i));
-                SaveGivenSplitData(i);
-                job.getLOG().info("SplitCmd: COMPLETE" );
+        if(job.m_data.hasNextFold()) {
+            job.m_data.nextFold();
+            if(m_saveToFile) {
+                getConf().set("data.splitter.cv.index", String.valueOf(this.m_splitId));
+                SaveGivenSplitData(this.m_splitId);
             }
-        } else {
-            getConf().set("data.splitter.cv.index", String.valueOf(1));
-            SaveGivenSplitData(1);
         }
+//        if (job.getCVCount() > 1) {
+//            int i = 1;
+//            while(job.m_data.hasNextFold()){
+//                job.m_data.nextFold();
+//                getConf().set("data.splitter.cv.index", String.valueOf(i));
+//                SaveGivenSplitData(i);
+//                job.getLOG().info("SplitCmd: COMPLETE" );
+//                i++;
+//            }
+////            for (int i = 1; i <= job.getCVCount(); i++) {
+////                getConf().set("data.splitter.cv.index", String.valueOf(i));
+////                SaveGivenSplitData(i);
+////                job.getLOG().info("SplitCmd: COMPLETE" );
+////            }
+//        } else {
+//            if(job.m_data.hasNextFold()) {
+//                job.m_data.nextFold();
+//                getConf().set("data.splitter.cv.index", String.valueOf(1));
+//                SaveGivenSplitData(1);
+//            }
+//        }
     }
 
     /**
@@ -72,11 +103,11 @@ public class SplitCmd implements IJobCmd {
         //  Set-Up  //
         job.getData().buildDataModel();
 
-        SparseMatrix test = genTestMatrix();
-        SparseMatrix train = genTrainMatrix();
+        SequentialAccessSparseMatrix test = genTestMatrix();
+        SequentialAccessSparseMatrix train = genTrainMatrix();
 
-        int numUsersTest = test.numRows();
-        int numUsersTrain = train.numRows();
+        int numUsersTest = test.rowSize();
+        int numUsersTrain = train.rowSize();
 
         BiMap<String, Integer> userMapping = job.getData().getUserMappingData(); // rather than //m_data
         BiMap<String, Integer> itemMapping = job.getData().getItemMappingData(); // rather than //m_data
@@ -87,7 +118,7 @@ public class SplitCmd implements IJobCmd {
         // TRAIN //
         StringBuilder train_out = new StringBuilder();
         for (int i_uid = 0; i_uid < numUsersTrain; i_uid++) {
-            SparseVector row_i = train.row(i_uid);
+            SequentialSparseVector row_i = train.row(i_uid);
             String userId = userMappingInverse.get(i_uid);
             for (VectorEntry i: row_i){
                 String itemId = itemMappingInverse.get(i.index());
@@ -108,7 +139,7 @@ public class SplitCmd implements IJobCmd {
         // TEST //
         StringBuilder test_out = new StringBuilder();
         for (int i_uid = 0; i_uid < numUsersTest; i_uid++) {
-            SparseVector row_i = test.row(i_uid);
+            SequentialSparseVector row_i = test.row(i_uid);
             String userId = userMappingInverse.get(i_uid);
             for (VectorEntry i: row_i){
                 String itemId = itemMappingInverse.get(i.index());
@@ -142,11 +173,11 @@ public class SplitCmd implements IJobCmd {
     private Configuration getConf() {
         return job.getConf();
     }
-    private SparseMatrix genTrainMatrix(){ return genMatrixAux(true);}
-    private SparseMatrix genTestMatrix(){ return genMatrixAux(false);}
+    private SequentialAccessSparseMatrix genTrainMatrix(){ return genMatrixAux(true);}
+    private SequentialAccessSparseMatrix genTestMatrix(){ return genMatrixAux(false);}
 
-    private SparseMatrix genMatrixAux(boolean i){
-        SparseMatrix ret;
+    private SequentialAccessSparseMatrix genMatrixAux(boolean i){
+        SequentialAccessSparseMatrix ret;
         if(i){ ret = job.getData().getDataSplitter().getTrainData(); }
         else { ret = job.getData().getDataSplitter().getTestData(); }
         return ret;
