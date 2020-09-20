@@ -146,7 +146,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 cmds = new ArrayList<IJobCmd>(m_cvCount);
                 for (int i = 1; i <= m_cvCount; i++) {
                     List<IJobCmd> subcmds = new ArrayList<IJobCmd>();
-                    subcmds.add(new SplitCmd(this));
+                    subcmds.add(new SplitCmd(this, i, true));
                     subcmds.add(new ExpCmd(this, i));
                     subcmds.add(new EvalCmd(this, i));
                     cmds.add(new SeqCmd(this, subcmds));
