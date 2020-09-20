@@ -86,8 +86,8 @@ public class ExpCmd implements IJobCmd{
             job.getLOG().info("2. train data is null");
 
         //Should be removed
-        job.SaveSplittedData(job.m_data.getDataSplitter().getTrainData(), this.m_splitId, "train");
-        job.SaveSplittedData(job.m_data.getDataSplitter().getTestData(), this.m_splitId, "test");
+//        job.SaveSplittedData(job.m_data.getDataSplitter().getTrainData(), this.m_splitId, "train");
+//        job.SaveSplittedData(job.m_data.getDataSplitter().getTestData(), this.m_splitId, "test");
 
 //        if(job.m_data.hasNextFold()) {
 //            job.m_data.nextFold();

@@ -358,32 +358,32 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
     }
 
     // Should be removed
-    public void SaveSplittedData(SequentialAccessSparseMatrix data, int foldNum, String dataType){
-        StringBuilder sb = new StringBuilder();
-        BiMap<String, Integer> userMapping = getData().getUserMappingData();
-        BiMap<String, Integer> itemMapping = getData().getItemMappingData();
-        if (userMapping != null && userMapping.size() > 0 && itemMapping != null && itemMapping.size() > 0) {
-            BiMap<Integer, String> userMappingInverse = userMapping.inverse();
-            BiMap<Integer, String> itemMappingInverse = itemMapping.inverse();
-            for(int u = 0; u < data.rowSize(); u++){
-                SequentialSparseVector u_recs = data.row(u);
-//                for(int j = 0; j < u_recs.size(); j++) {
-//                    Vector.VectorEntry q = u_recs.getVectorEntry(0);
-                for(Vector.VectorEntry entry : u_recs){
-                    String userId = userMappingInverse.get(u);
-                    String itemId = itemMappingInverse.get(entry.index());
-                    sb.append(userId).append("\t").append(itemId).append("\t").append(String.valueOf(entry.get())).append("\n");
-                }
-
+//    public void SaveSplittedData(SequentialAccessSparseMatrix data, int foldNum, String dataType){
+//        StringBuilder sb = new StringBuilder();
+//        BiMap<String, Integer> userMapping = getData().getUserMappingData();
+//        BiMap<String, Integer> itemMapping = getData().getItemMappingData();
+//        if (userMapping != null && userMapping.size() > 0 && itemMapping != null && itemMapping.size() > 0) {
+//            BiMap<Integer, String> userMappingInverse = userMapping.inverse();
+//            BiMap<Integer, String> itemMappingInverse = itemMapping.inverse();
+//            for(int u = 0; u < data.rowSize(); u++){
+//                SequentialSparseVector u_recs = data.row(u);
+////                for(int j = 0; j < u_recs.size(); j++) {
+////                    Vector.VectorEntry q = u_recs.getVectorEntry(0);
+//                for(Vector.VectorEntry entry : u_recs){
+//                    String userId = userMappingInverse.get(u);
+//                    String itemId = itemMappingInverse.get(entry.index());
+//                    sb.append(userId).append("\t").append(itemId).append("\t").append(String.valueOf(entry.get())).append("\n");
 //                }
-            }
-            String rawData = sb.toString();
-            // save resultData
-            try {
-                FileUtil.writeString("Results/"+dataType+"-"+String.valueOf(foldNum), rawData);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//
+////                }
+//            }
+//            String rawData = sb.toString();
+//            // save resultData
+//            try {
+//                FileUtil.writeString("Results/"+dataType+"-"+String.valueOf(foldNum), rawData);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 }
