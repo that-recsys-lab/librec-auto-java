@@ -200,8 +200,8 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         String[] similarityKeys = m_conf.getStrings("rec.recommender.similarities");
         if (similarityKeys != null && similarityKeys.length > 0) {
             for(int i = 0; i< similarityKeys.length; i++){
-                if (getSimilarityClass() != null) {
-                    RecommenderSimilarity similarity = (RecommenderSimilarity) ReflectionUtil.newInstance(getSimilarityClass(), m_conf);
+                if (getSimilarityClass(i) != null) {
+                    RecommenderSimilarity similarity = (RecommenderSimilarity) ReflectionUtil.newInstance(getSimilarityClass(i), m_conf);
                     m_conf.set("rec.recommender.similarity.key", similarityKeys[i]);
                     similarity.buildSimilarityMatrix(m_data);
                     if(i == 0){
@@ -245,6 +245,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 for (int classIdx = 0; classIdx < evalClassKeys.length; ++classIdx) {
                     RecommenderEvaluator evaluator = ReflectionUtil.newInstance(getEvaluatorClass(evalClassKeys[classIdx]), null);
                     evaluator.setTopN(m_conf.getInt("rec.recommender.ranking.topn", 10));
+                    evaluator.setDataModel(m_data);
 
                     double evalValue = evaluator.evaluate(evalContext);
                     LOG.info("Evaluator info:" + evaluator.getClass().getSimpleName() + " is " + evalValue);
