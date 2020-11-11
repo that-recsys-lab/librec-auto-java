@@ -107,6 +107,9 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         List<IJobCmd> cmds;
 
         switch (arg) {
+			case "check":
+                this.m_commands.add(new CheckCmd(this));
+                break;
             case "split":
 //                    this.m_commands.add(new SplitCmd(this));
                 cmds = new ArrayList<IJobCmd>(m_cvCount);
