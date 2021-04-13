@@ -207,8 +207,8 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                     RecommenderSimilarity similarity = (RecommenderSimilarity) ReflectionUtil.newInstance(getSimilarityClass(i), m_conf);
                     m_conf.set("rec.recommender.similarity.key", similarityKeys[i]);
                     similarity.buildSimilarityMatrix(m_data);
-                    if(i == 0){
-                        context.setSimilarity(similarity);
+                    if(similarityKeys[i].equals("item") || similarityKeys[i].equals("user")){
+                            context.setSimilarity(similarity);
                     }
                     context.addSimilarities(similarityKeys[i], similarity);
                 }
