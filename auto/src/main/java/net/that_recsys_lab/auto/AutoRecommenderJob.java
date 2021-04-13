@@ -4,6 +4,7 @@ import com.google.common.collect.BiMap;
 import net.librec.math.structure.SequentialAccessSparseMatrix;
 import net.librec.math.structure.SequentialSparseVector;
 import net.librec.math.structure.Vector;
+import net.librec.util.DriverClassUtil;
 import net.librec.util.FileUtil;
 import net.that_recsys_lab.auto.cmd.*;
 
@@ -46,6 +47,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
     public DataModel m_data;
     protected String m_modelSplit;
     protected int m_cvCount; // loocv not supported
+    protected boolean m_kcvReload;
     public Map<String, List<Double>> m_cvEvalResults;
     public List<Recommender> m_recommenders;
     private Map<Measure.MeasureValue, Double> m_evaluatedMap;
@@ -57,6 +59,12 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         if (m_modelSplit.equals("kcv")) { // or 'locv'
             this.m_cvEvalResults = new HashMap<>();
             m_cvCount = m_conf.getInt("data.splitter.cv.number", 1);
+            m_kcvReload = m_conf.getBoolean("data.splitter.cv.reload", false);
+            if(m_kcvReload){
+                m_conf.set("data.model.splitter","testset");
+                m_conf.set("data.input.path", "split/cv_1/train.txt");
+                m_conf.set("data.testset.path", "split/cv_1/test.txt");
+            }
         } else {
             m_cvCount = 1;
         }
@@ -91,7 +99,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
      */
     public void setData()throws ClassNotFoundException, IOException, LibrecException {
         m_data = ReflectionUtil.newInstance((Class<DataModel>) this.getDataModelClass(), m_conf);
-        m_conf.set("data.splitter.cv.index","1"); // done in case of a CV load.  Will crash on buildDataModel otherwise.
+        m_conf.set("data.splitter.cv.index", "1"); // done in case of a CV load.  Will crash on buildDataModel otherwise.
         m_data.buildDataModel();
     }
 
@@ -107,7 +115,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         List<IJobCmd> cmds;
 
         switch (arg) {
-			case "check":
+            case "check":
                 this.m_commands.add(new CheckCmd(this));
                 break;
             case "split":
@@ -127,7 +135,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 cmds = new ArrayList<IJobCmd>(m_cvCount);
                 for (int i = 1; i <= m_cvCount; i++) {
                     List<IJobCmd> subcmds = new ArrayList<IJobCmd>();
-                    subcmds.add(new SplitCmd(this, i, false));
+                    subcmds.add(new SplitCmd(this, i, false, true));
                     subcmds.add(new ReRunEvalCmd(this, i));
                     cmds.add(new SeqCmd(this, subcmds));
                 }
@@ -137,7 +145,19 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 cmds = new ArrayList<IJobCmd>(m_cvCount);
                 for (int i = 1; i <= m_cvCount; i++) {
                     List<IJobCmd> subcmds = new ArrayList<IJobCmd>();
-                    subcmds.add(new SplitCmd(this, i, false));
+                    subcmds.add(new SplitCmd(this, i, false, true));
+                    subcmds.add(new ExpCmd(this, i));
+                    subcmds.add(new EvalCmd(this, i));
+                    cmds.add(new SeqCmd(this, subcmds));
+                }
+                this.m_commands.add(new SeqCmd(this, cmds));
+                break;
+            case "run":
+                cmds = new ArrayList<IJobCmd>(m_cvCount);
+                for (int i = 1; i <= m_cvCount; i++) {
+                    List<IJobCmd> subcmds = new ArrayList<IJobCmd>();
+                    subcmds.add(new SplitCmd(this, i, true, false));
+                    subcmds.add(new SplitCmd(this, i, false, true));
                     subcmds.add(new ExpCmd(this, i));
                     subcmds.add(new EvalCmd(this, i));
                     cmds.add(new SeqCmd(this, subcmds));
@@ -149,7 +169,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 cmds = new ArrayList<IJobCmd>(m_cvCount);
                 for (int i = 1; i <= m_cvCount; i++) {
                     List<IJobCmd> subcmds = new ArrayList<IJobCmd>();
-                    subcmds.add(new SplitCmd(this, i, true));
+                    subcmds.add(new SplitCmd(this, i, false, true));
                     subcmds.add(new ExpCmd(this, i));
                     subcmds.add(new EvalCmd(this, i));
                     cmds.add(new SeqCmd(this, subcmds));
@@ -203,8 +223,8 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         String[] similarityKeys = m_conf.getStrings("rec.recommender.similarities");
         if (similarityKeys != null && similarityKeys.length > 0) {
             for(int i = 0; i< similarityKeys.length; i++){
-                if (getSimilarityClass(i) != null) {
-                    RecommenderSimilarity similarity = (RecommenderSimilarity) ReflectionUtil.newInstance(getSimilarityClass(i), m_conf);
+                if (getSimilarityClass() != null) {
+                    RecommenderSimilarity similarity = (RecommenderSimilarity) ReflectionUtil.newInstance(getSimilarityClass(), m_conf);
                     m_conf.set("rec.recommender.similarity.key", similarityKeys[i]);
                     similarity.buildSimilarityMatrix(m_data);
                     if(similarityKeys[i].equals("item") || similarityKeys[i].equals("user")){
@@ -248,7 +268,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 for (int classIdx = 0; classIdx < evalClassKeys.length; ++classIdx) {
                     RecommenderEvaluator evaluator = ReflectionUtil.newInstance(getEvaluatorClass(evalClassKeys[classIdx]), null);
                     evaluator.setTopN(m_conf.getInt("rec.recommender.ranking.topn", 10));
-                    evaluator.setDataModel(m_data);
+//                    evaluator.setDataModel(m_data);
 
                     double evalValue = evaluator.evaluate(evalContext);
                     LOG.info("Evaluator info:" + evaluator.getClass().getSimpleName() + " is " + evalValue);
@@ -390,4 +410,5 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
 //            }
 //        }
 //    }
+
 }

@@ -32,9 +32,16 @@ public class EvalCmd implements IJobCmd {
     public void execute() throws LibrecException, IOException, ClassNotFoundException {
         job.getLOG().info("EvalCMD: START");
         Recommender recommender = job.m_recommenders.get(this.m_splitId-1);
-        RecommenderContext context = new RecommenderContext(job.getConf());
+        RecommenderContext context = new RecommenderContext(job.getConf(), job.m_data);
         job.executeEvaluatorAutoOverload(recommender, context);
-        List<RecommendedItem> recommendedList = recommender.getRecommendedList(recommender.recommendRank()); // -> is this call necessary?
+//        List<RecommendedItem> recommendedList = recommender.getRecommendedList(recommender.recommendRank()); // -> is this call necessary?
+        List<RecommendedItem> recommendedList;
+        if (getConf().getBoolean("rec.recommender.isranking")) {
+            recommendedList = recommender.getRecommendedList(recommender.recommendRank()); // -> is this call necessary?
+        } else {
+            recommendedList =
+                    recommender.getRecommendedList(recommender.recommendRating(context.getDataModel().getTestDataSet()));
+        }
         recommendedList = filterResult(recommendedList); // -> is this call necessary?
         saveResult(recommendedList); // -> redundant to save results if using results already
         job.getLOG().info("EvalCMD: COMPLETE.");

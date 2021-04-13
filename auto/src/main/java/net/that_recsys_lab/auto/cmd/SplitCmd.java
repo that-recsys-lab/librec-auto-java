@@ -18,6 +18,7 @@ public class SplitCmd implements IJobCmd {
     private AutoRecommenderJob job;
     private int m_splitId;
     private boolean m_saveToFile = true;
+    private boolean m_kcvReload = false;
 
     // C'tor
     public SplitCmd(AutoRecommenderJob job) {
@@ -27,18 +28,30 @@ public class SplitCmd implements IJobCmd {
         this.job = job;
         this.m_splitId = splitId;
     }
-    public SplitCmd(AutoRecommenderJob job, int splitId, boolean saveToFile){
+    public SplitCmd(AutoRecommenderJob job, int splitId, boolean saveToFile, boolean kcvreload){
         this.job = job;
         this.m_splitId = splitId;
         this.m_saveToFile = saveToFile;
+        this.m_kcvReload = kcvreload;
     }
     private Double splitRatio;
 
     // Interface interaction
     public void execute() throws LibrecException {
         try {
-            splitRatio = Double.parseDouble(getConf().get("data.splitter.trainset.ratio")); //This is set-up
-            SplitData();
+            if(m_kcvReload){
+                if(this.m_splitId > 1) {
+                    job.getConf().setBoolean("data.convert.read.ready",false);
+                    job.getConf().set("data.model.splitter", "testset");
+                    job.getConf().set("data.input.path", "split/cv_"+this.m_splitId+"/train.txt");
+                    job.getConf().set("data.testset.path", "split/cv_"+this.m_splitId+"/test.txt");
+                    job.setData();
+                }
+            }
+            else {
+                splitRatio = Double.parseDouble(getConf().get("data.splitter.trainset.ratio")); //This is set-up
+                SplitData();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -64,27 +77,6 @@ public class SplitCmd implements IJobCmd {
                 SaveGivenSplitData(this.m_splitId);
             }
         }
-//        if (job.getCVCount() > 1) {
-//            int i = 1;
-//            while(job.m_data.hasNextFold()){
-//                job.m_data.nextFold();
-//                getConf().set("data.splitter.cv.index", String.valueOf(i));
-//                SaveGivenSplitData(i);
-//                job.getLOG().info("SplitCmd: COMPLETE" );
-//                i++;
-//            }
-////            for (int i = 1; i <= job.getCVCount(); i++) {
-////                getConf().set("data.splitter.cv.index", String.valueOf(i));
-////                SaveGivenSplitData(i);
-////                job.getLOG().info("SplitCmd: COMPLETE" );
-////            }
-//        } else {
-//            if(job.m_data.hasNextFold()) {
-//                job.m_data.nextFold();
-//                getConf().set("data.splitter.cv.index", String.valueOf(1));
-//                SaveGivenSplitData(1);
-//            }
-//        }
     }
 
     /**
