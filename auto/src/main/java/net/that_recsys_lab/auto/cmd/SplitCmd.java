@@ -40,13 +40,14 @@ public class SplitCmd implements IJobCmd {
     public void execute() throws LibrecException {
         try {
             if(m_kcvReload){
-                if(this.m_splitId > 1) {
+                // Per Masoud, fixing the error with ReRunEval
+ //               if(this.m_splitId > 1) {
                     job.getConf().setBoolean("data.convert.read.ready",false);
                     job.getConf().set("data.model.splitter", "testset");
                     job.getConf().set("data.input.path", "split/cv_"+this.m_splitId+"/train.txt");
                     job.getConf().set("data.testset.path", "split/cv_"+this.m_splitId+"/test.txt");
                     job.setData();
-                }
+//                }
             }
             else {
                 splitRatio = Double.parseDouble(getConf().get("data.splitter.trainset.ratio")); //This is set-up
