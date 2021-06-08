@@ -56,8 +56,9 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
         super(conf);
         this.m_conf = conf;
         this.m_modelSplit = conf.get("data.model.splitter");  // Error handle this
+		m_cvCount = 1;
+		this.m_cvEvalResults = new HashMap<>();
         if (m_modelSplit.equals("kcv")) { // or 'locv'
-            this.m_cvEvalResults = new HashMap<>();
             m_cvCount = m_conf.getInt("data.splitter.cv.number", 1);
             m_kcvReload = m_conf.getBoolean("data.splitter.cv.reload", false);
             if(m_kcvReload){
@@ -66,7 +67,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 m_conf.set("data.testset.path", "split/cv_1/test.txt");
             }
         } else {
-            m_cvCount = 1;
+            
         }
         this.m_recommenders = new ArrayList<>(m_cvCount);
         try {
