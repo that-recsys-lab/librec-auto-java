@@ -66,9 +66,7 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 m_conf.set("data.input.path", "split/cv_1/train.txt");
                 m_conf.set("data.testset.path", "split/cv_1/test.txt");
             }
-        } else {
-            
-        }
+        } 
         this.m_recommenders = new ArrayList<>(m_cvCount);
         try {
             setData();
