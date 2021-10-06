@@ -156,7 +156,8 @@ public class AutoRecommenderJob extends net.librec.job.RecommenderJob{
                 for (int i = 1; i <= m_cvCount; i++) {
                     List<IJobCmd> subcmds = new ArrayList<IJobCmd>();
                     subcmds.add(new SplitCmd(this, i, true, false));
-                    subcmds.add(new SplitCmd(this, i, false, true));
+                    // 2021-10-05 RB This line deleted to solve the problem with all splits being identical.
+                    //subcmds.add(new SplitCmd(this, i, false, true));
                     subcmds.add(new ExpCmd(this, i));
                     subcmds.add(new EvalCmd(this, i));
                     cmds.add(new SeqCmd(this, subcmds));
