@@ -46,6 +46,7 @@ public class SplitCmd implements IJobCmd {
                     job.getConf().set("data.model.splitter", "testset");
                     job.getConf().set("data.input.path", "split/cv_"+this.m_splitId+"/train.txt");
                     job.getConf().set("data.testset.path", "split/cv_"+this.m_splitId+"/test.txt");
+                    job.getConf().setBoolean("feature.appender.read.ready", false);
                     job.setData();
 //                }
             }
